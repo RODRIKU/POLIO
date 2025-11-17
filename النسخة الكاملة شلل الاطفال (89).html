@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>رحلة خبير شلل الأطفال - التحدي الكامل</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700;800&display=swap');
+
+        :root {
+            --primary-color: #007bff; --secondary-color: #0056b3; --background-color: #f4f7f9;
+            --card-background: #ffffff; --text-color: #212529; --correct-color: #28a745;
+            --wrong-color: #dc3545; --neutral-border: #ced4da; --progress-bar-bg: #e9ecef;
+            --locked-color: #6c757d;
+        }
+
+        body {
+            font-family: 'Tajawal', sans-serif; background-color: var(--background-color); color: var(--text-color);
+            display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; padding: 20px;
+        }
+
+        .container {
+            background-color: var(--card-background); border-radius: 20px; box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+            width: 100%; max-width: 800px; overflow: hidden; text-align: center; position: relative;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color)); color: white; padding: 25px;
+        }
+        
+        .header h1 { margin: 0; font-size: 2.2em; font-weight: 800; }
+        .header p { margin: 5px 0 0; opacity: 0.9; }
+
+        .screen { padding: 30px 40px; }
+        .hide { display: none; }
+
+        /* Main Menu Styles */
+        #main-menu h2 { color: var(--header-color); margin-top: 0; margin-bottom: 25px; }
+        #main-menu .level-grid { display: grid; grid-template-columns: 1fr; gap: 15px; }
+        .level-btn {
+            background-color: #fff; border: 2px solid var(--neutral-border); border-radius: 12px; padding: 20px;
+            font-size: 1.3em; font-weight: 700; cursor: pointer; transition: all 0.3s ease;
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .level-btn:not(.locked):hover { border-color: var(--primary-color); color: var(--primary-color); transform: translateY(-3px); box-shadow: 0 4px 15px rgba(0,0,0,0.08); }
+        .level-btn.locked { background-color: #f8f9fa; color: var(--locked-color); cursor: not-allowed; }
+        .level-btn .level-title { text-align: right; }
+        .level-btn .level-status { font-size: 1.5em; }
+
+        /* Quiz Screen Styles */
+        .quiz-body { position: relative; }
+        #back-to-menu-from-quiz {
+            position: absolute; top: 20px; left: 20px; background: transparent; border: none; font-size: 2em;
+            cursor: pointer; color: #aaa; transition: color 0.2s; z-index: 10;
+        }
+        #back-to-menu-from-quiz:hover { color: var(--primary-color); }
+
+        #progress-container { width: 100%; background-color: var(--progress-bar-bg); border-radius: 10px; margin-bottom: 15px; }
+        #progress-bar { height: 12px; width: 0%; background-color: var(--correct-color); border-radius: 10px; transition: width 0.4s ease-in-out; }
+        #question-counter { font-size: 1em; color: #6c757d; margin-bottom: 20px; }
+        #level-title { color: var(--primary-color); font-size: 1.8em; margin-bottom: 15px; }
+        #question-text { font-size: 1.4em; font-weight: 700; margin-bottom: 25px; min-height: 70px; }
+
+        .btn-grid { display: grid; grid-template-columns: 1fr; gap: 12px; }
+        .btn {
+            background-color: transparent; border: 2px solid var(--neutral-border); border-radius: 8px; padding: 15px;
+            font-size: 1.1em; cursor: pointer; transition: all 0.2s ease-in-out; text-align: right; color: var(--text-color);
+        }
+        .btn:hover:not([disabled]) { background-color: #f8f9fa; border-color: var(--secondary-color); }
+        .btn.correct { background-color: var(--correct-color); color: white; border-color: var(--correct-color); }
+        .btn.wrong { background-color: var(--wrong-color); color: white; border-color: var(--wrong-color); }
+        .btn:disabled { cursor: not-allowed; }
+
+        #fill-in-blank-container input { width: 80%; padding: 15px; border: 2px solid var(--neutral-border); border-radius: 8px; font-size: 1.1em; text-align: center; margin-bottom: 10px; transition: border-color 0.3s; }
+        #feedback-text { margin-top: 10px; font-weight: 700; min-height: 24px; }
+        
+        .control-btn {
+            background-color: var(--secondary-color); color: white; border: none; border-radius: 8px; padding: 14px 40px;
+            font-size: 1.2em; font-weight: 700; cursor: pointer; transition: background-color 0.2s; margin-top: 20px;
+        }
+        .control-btn:hover { background-color: #004085; }
+        .retry-btn { background-color: var(--wrong-color); }
+        .retry-btn:hover { background-color: #a71d2a; }
+
+        /* Explanation Box Styles */
+        #explanation-container {
+            margin-top: 25px; padding: 15px; background-color: #f0f4f8; border-right: 5px solid var(--primary-color);
+            border-radius: 8px; text-align: right; font-size: 1em; line-height: 1.6; opacity: 0; transition: opacity 0.5s ease-in-out;
+        }
+        #explanation-container.visible { opacity: 1; }
+        
+        /* Result Screens */
+        .result-icon { font-size: 5em; margin-bottom: 20px; }
+        .result-screen h2 { font-size: 2.2em; color: var(--primary-color); }
+        .result-screen p { font-size: 1.3em; }
+
+        /* Animation Styles */
+        @keyframes shake-wrong { 10%, 90% { transform: translateX(-1px); } 20%, 80% { transform: translateX(2px); } 30%, 50%, 70% { transform: translateX(-4px); } 40%, 60% { transform: translateX(4px); } }
+        .animate-wrong { animation: shake-wrong 0.6s cubic-bezier(.36,.07,.19,.97) both; }
+        @keyframes pulse-correct { 0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(40, 167, 69, 0.5); } 70% { transform: scale(1.02); box-shadow: 0 0 10px 15px rgba(40, 167, 69, 0); } 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(40, 167, 69, 0); } }
+        .animate-correct { animation: pulse-correct 0.8s ease-in-out; }
+        
+        footer { text-align: center; padding: 15px; background-color: #343a40; color: #f8f9fa; font-size: 0.9em; }
+        #cheat-code-trigger { cursor: pointer; opacity: 0.7; transition: opacity 0.2s; }
+        #cheat-code-trigger:hover { opacity: 1; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>رحلة خبير شلل الأطفال 🇩🇿</h1>
+            <p id="header-subtitle">اختر مستوى لتبدأ التحدي</p>
+        </div>
+
+        <!-- Screens -->
+        <div id="main-menu" class="screen">
+            <h2>اختر تحديًا لتبدأ رحلتك</h2>
+            <div class="level-grid"></div>
+        </div>
+
+        <div id="quiz-screen" class="screen hide quiz-body">
+            <button id="back-to-menu-from-quiz" title="العودة للقائمة الرئيسية">➡️</button>
+            <h2 id="level-title"></h2>
+            <div id="progress-container"><div id="progress-bar"></div></div>
+            <div id="question-counter"></div>
+            <div id="question-container">
+                <p id="question-text"></p>
+                <div id="answer-buttons" class="btn-grid"></div>
+                <div id="fill-in-blank-container" class="hide">
+                    <input type="text" id="fib-input" placeholder="اكتب إجابتك هنا">
+                    <p id="feedback-text"></p>
+                </div>
+            </div>
+            <div id="explanation-container" class="hide"><p id="explanation-text"></p></div>
+            <button id="next-btn" class="control-btn hide">السؤال التالي</button>
+            <button id="check-btn" class="control-btn hide" style="margin-top: 10px;">تحقق</button>
+        </div>
+
+        <div id="level-complete-screen" class="screen hide result-screen">
+            <div id="result-icon-container"></div>
+            <h2 id="level-result-title"></h2>
+            <p id="level-score-text"></p>
+            <p id="level-result-message"></p>
+            <button id="next-level-btn" class="control-btn hide">المستوى التالي</button>
+            <button id="retry-level-btn" class="control-btn retry-btn hide">أعد المحاولة</button>
+            <button id="back-to-menu-btn" class="control-btn" style="background-color: #6c757d;">القائمة الرئيسية</button>
+        </div>
+
+        <div id="game-complete-screen" class="screen hide result-screen">
+            <div class="result-icon">🏆</div>
+            <h2>تهانينا! لقد أصبحت خبيراً!</h2>
+            <p>أكملت جميع المستويات بنجاح وأثبتت معرفة شاملة وعميقة.</p>
+            <button id="play-again-btn" class="control-btn">العب مرة أخرى</button>
+        </div>
+        
+        <footer>
+            <p>
+                &copy; 2025 - إعداد: حميدوش عبدالتواب، مختص في حفظ الصحة. 
+                <span id="cheat-code-trigger" title="إدخال شيفرة الغش">🔑</span>
+            </p>
+        </footer>
+    </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    // ALL GAME LOGIC AND DATA IS HERE
+    const gameData = [
+        {
+            title: "المستوى 1: الأساسيات", passingScore: 8,
+            questions: [
+                { type: 'mcq', q: 'ما هو المسبب الرئيسي لمرض شلل الأطفال؟', a: [{ t: 'بكتيريا', c: false }, { t: 'فيروس', c: true }, { t: 'فطر', c: false }], e: 'شلل الأطفال مرض يسببه "فيروس بوليو"، وهو فيروس شديد العدوى يهاجم الجهاز العصبي.' },
+                { type: 'true_false', q: 'شلل الأطفال يصيب البالغين بشكل أساسي.', c: false, e: 'خطأ. يصيب الفيروس بشكل أساسي الأطفال دون سن الخامسة، على الرغم من أن البالغين غير المحصنين يمكن أن يصابوا به أيضًا.' },
+                { type: 'fill_in_blank', q: 'لقاح شلل الأطفال الفموي يُعرف بالاختصار _____.', a: 'VPO', e: 'VPO هو اختصار لـ (Vaccin Polio Oral)، ويُعرف عالميًا بـ OPV.' },
+                { type: 'mcq', q: 'كيف ينتقل فيروس شلل الأطفال بشكل رئيسي؟', a: [{ t: 'عن طريق التنفس', c: false }, { t: 'عن طريق الفم والبراز', c: true }, { t: 'عن طريق الدم', c: false }], e: 'ينتقل الفيروس بالطريق الفموي-البرازي، أي عن طريق تناول ماء أو طعام ملوث ببراز شخص مصاب.' },
+                { type: 'true_false', q: 'اللقاح هو الطريقة الوحيدة للوقاية الفعالة من شلل الأطفال.', c: true, e: 'صحيح. لا يوجد علاج للشلل الذي يسببه الفيروس، والتحصين باللقاح هو خط الدفاع الوحيد والمضمون.' },
+                { type: 'mcq', q: 'ماذا يعني الاختصار VPI؟', a: [{ t: 'لقاح فموي', c: false }, { t: 'لقاح حقني ميت', c: true }, { t: 'فيروس قوي', c: false }], e: 'VPI هو اختصار لـ (Vaccin Polio Inactivé)، وهو لقاح يحتوي على فيروس تم قتله (تعطيله)، ويُعطى عن طريق الحقن.' },
+                { type: 'fill_in_blank', q: 'يهاجم فيروس شلل الأطفال الجهاز ______ في الجسم.', a: 'العصبي', e: 'يستهدف الفيروس الجهاز العصبي المركزي، مما قد يؤدي إلى تلف الخلايا العصبية الحركية وبالتالي حدوث الشلل.' },
+                { type: 'mcq', q: 'أي فئة عمرية هي الأكثر عرضة للإصابة بشلل الأطفال؟', a: [{ t: 'كبار السن', c: false }, { t: 'الأطفال تحت 5 سنوات', c: true }, { t: 'المراهقون', c: false }], e: 'أكثر من 90% من الحالات تحدث لدى الأطفال الصغار الذين لم يكتمل نمو جهازهم المناعي بعد.' },
+                { type: 'true_false', q: 'يمكن علاج الشلل الناتج عن فيروس شلل الأطفال بشكل كامل.', c: false, e: 'خطأ. الشلل الذي يسببه فيروس شلل الأطفال دائم ولا يمكن الشفاء منه. العلاج الطبيعي يمكن أن يساعد في تحسين الحركة فقط.' },
+                { type: 'mcq', q: 'كيف يُعطى لقاح VPO؟', a: [{ t: 'حقنة في الذراع', c: false }, { t: 'قطرات في الفم', c: true }, { t: 'لصقة على الجلد', c: false }], e: 'يُعطى لقاح VPO على شكل قطرتين في الفم، مما يجعله سهل الاستخدام في الحملات الجماعية.' },
+            ]
+        },
+        {
+            title: "المستوى 2: المقارنات والآليات", passingScore: 8,
+            questions: [
+                { type: 'mcq', q: 'أي لقاح يحتوي على فيروس حي مُضعّف؟', a: [{ t: 'VPI', c: false }, { t: 'كلاهما', c: false }, { t: 'VPO', c: true }], e: 'لقاح VPO الفموي يستخدم فيروسًا حيًا تم إضعافه لتحفيز مناعة قوية في الأمعاء، مما يمنع انتشار العدوى.' },
+                { type: 'true_false', q: 'لقاح VPI (الحقني) أكثر فعالية من VPO في بناء مناعة جماعية.', c: false, e: 'خطأ. لقاح VPO (الفموي) هو الأفضل في بناء المناعة الجماعية لأنه يمنع تكاثر الفيروس في الأمعاء ويقطع سلسلة العدوى.' },
+                { type: 'fill_in_blank', q: 'المناعة التي يبنيها لقاح VPO في الأمعاء تمنع تكاثر الفيروس و_____.', a: 'انتشاره', e: 'بناء مناعة معوية قوية هو السلاح الأهم لوقف انتقال الفيروس من شخص لآخر في المجتمع.' },
+                { type: 'mcq', q: 'ما هي الميزة الرئيسية للقاح VPI (الحقني)؟', a: [{ t: 'رخيص الثمن', c: false }, { t: 'سهل الإعطاء', c: false }, { t: 'آمن جدًا ولا يمكن أن يتحور', c: true }], e: 'بما أن الفيروس في لقاح VPI ميت، فلا توجد أي فرصة لتحوره أو تسببه في المرض، مما يجعله الخيار الأكثر أمانًا.' },
+                { type: 'true_false', q: 'استراتيجية الجزائر تجمع بين استخدام VPI و VPO معًا.', c: true, e: 'صحيح. هذه الاستراتيجية المختلطة تستفيد من أمان VPI وفعالية VPO في بناء المناعة الجماعية.' },
+                { type: 'mcq', q: 'لماذا يُعطى VPI قبل VPO في بعض الجداول الحديثة؟', a: [{ t: 'لبناء مناعة دموية آمنة أولاً', c: true }, { t: 'لأنه أرخص', c: false }, { t: 'لأنه متوفر أكثر', c: false }], e: 'البدء بـ VPI يؤسس مناعة قوية في الدم، مما يحمي الطفل من أي خطر نادر قد يأتي من الفيروس المضعف في VPO لاحقًا.' },
+                { type: 'fill_in_blank', q: 'التحور الخطير لفيروس اللقاح VPO يُعرف بالاختصار _____.', a: 'VDPV', e: 'VDPV (Vaccine-Derived Poliovirus) هو فيروس مشتق من اللقاح يحدث عندما ينتشر الفيروس المضعف في مجتمع ضعيف التحصين.' },
+                { type: 'mcq', q: 'أي لقاح يوفر حماية في الدم فقط ولا يمنع العدوى المعوية بقوة؟', a: [{ t: 'VPO', c: false }, { t: 'VPI', c: true }, { t: 'لا يوجد', c: false }], e: 'لقاح VPI يحفز مناعة ممتازة في الدم تمنع الشلل، لكن تأثيره على المناعة المعوية أقل بكثير من VPO.' },
+                { type: 'true_false', q: 'يحدث تحور VDPV في بيئات ذات تغطية تلقيحية عالية وممتازة.', c: false, e: 'خطأ. يحدث العكس تمامًا؛ التحور هو نتيجة مباشرة لوجود "جيوب" من السكان غير الملقحين حيث يمكن للفيروس أن ينتشر لفترة طويلة.' },
+                { type: 'mcq', q: 'اللقاح الذي يُعطى ضمن اللقاح الخماسي أو السداسي في الجزائر هو؟', a: [{ t: 'VPO', c: false }, { t: 'VPI', c: true }, { t: 'كلاهما', c: false }], e: 'يتم دمج VPI (الحقني) مع لقاحات أخرى مثل الدفتيريا والكزاز والسعال الديكي لتسهيل جدول التلقيح وتقليل عدد الحقن.' },
+            ]
+        },
+        {
+            title: "المستوى 3: الرزنامة الوطنية", passingScore: 8,
+            questions: [
+                { type: 'mcq', q: 'حسب الرزنامة الجزائرية الحالية، هل يُعطى لقاح شلل الأطفال عند الولادة؟', a: [{ t: 'نعم، VPO', c: false }, { t: 'نعم، VPI', c: false }, { t: 'لا، تم إلغاؤه', c: true }], e: 'تم إلغاء جرعة VPO عند الولادة (الجرعة صفر) في الجزائر منذ يونيو 2021 لزيادة الأمان.' },
+                { type: 'true_false', q: 'في عمر 4 أشهر، يتلقى الطفل الجزائري جرعة من VPI و VPO معًا.', c: true, e: 'صحيح. تُعطى الجرعة الثانية من كلا اللقاحين في الشهر الرابع لتعزيز المناعة.' },
+                { type: 'fill_in_blank', q: 'الجرعة الداعمة (Rappel) من لقاح شلل الأطفال تُعطى في سن ____ سنوات.', a: '6', e: 'هذه الجرعة مهمة جدًا لتعزيز المناعة قبل دخول الطفل المدرسة والاختلاط على نطاق أوسع.' },
+                { type: 'mcq', q: 'في أي عام صدرت المذكرة الرسمية التي ألغت جرعة VPO عند الولادة؟', a: [{ t: '2016', c: false }, { t: '2021', c: true }, { t: '2023', c: false }], e: 'صدرت المذكرة رقم 13 في 14 يونيو 2021، معلنةً الإيقاف الرسمي لهذه الجرعة.' },
+                { type: 'true_false', q: 'يتلقى الطفل 3 جرعات أساسية من لقاح VPO خلال السنة الأولى من عمره.', c: true, e: 'صحيح. يتم إعطاء جرعات VPO في الشهر 2، والشهر 4، والشهر 12.' },
+                { type: 'mcq', q: 'الجرعة الداعمة في سن 6 سنوات هي من نوع؟', a: [{ t: 'VPO', c: false }, { t: 'VPI', c: true }, { t: 'كلاهما', c: false }], e: 'تعتمد الجرعة الداعمة على VPI (الحقني) فقط لضمان تعزيز المناعة في الدم بأمان.' },
+                { type: 'fill_in_blank', q: 'أول جرعة من لقاح VPI تُعطى للطفل في عمر الشهر _____.', a: 'الثاني', e: 'يبدأ التحصين ضد شلل الأطفال في الجزائر في الشهر الثاني من عمر الطفل.' },
+                { type: 'mcq', q: 'كم عدد جرعات VPI التي يتلقاها الطفل إجمالاً حتى سن 6 سنوات؟', a: [{ t: '3 جرعات', c: false }, { t: '4 جرعات', c: true }, { t: '5 جرعات', c: false }], e: 'يتلقى الطفل 4 جرعات حقنية (VPI): في الشهر 2، 4، 12، ثم جرعة داعمة في سن 6 سنوات.' },
+                { type: 'true_false', q: 'الجرعة في عمر 12 شهرًا تعتبر جرعة داعمة وليست أساسية.', c: false, e: 'خطأ. جرعة 12 شهرًا هي الجرعة الثالثة والأساسية لإكمال سلسلة التحصين الأولية للرضيع.' },
+                { type: 'mcq', q: 'سبب إلغاء جرعة الولادة كان متعلقًا بـ؟', a: [{ t: 'توصيات منظمة الصحة العالمية لزيادة الأمان', c: true }, { t: 'صعوبة إعطاء اللقاح للمواليد', c: false }, { t: 'عدم فعاليته', c: false }], e: 'جاء القرار كجزء من استراتيجية عالمية لتقليل المخاطر النادرة جدًا المرتبطة بلقاح VPO، خاصة بعد إعلان إفريقيا خالية من الفيروس البري.' },
+            ]
+        },
+        {
+            title: "المستوى 4: سيناريوهات تطبيقية", passingScore: 8,
+            questions: [
+                { type: 'mcq', q: 'أم قلقة أحضرت طفلها (عمره شهران) للقاح، وتسأل عن سبب إعطائه حقنة وقطرات في الفم. أفضل إجابة هي:', a: [{ t: 'هذا هو البروتوكول فقط.', c: false }, { t: 'الحقنة تحمي دمه والقطرات تحمي أمعاءه والمجتمع.', c: true }, { t: 'أحدهما بديل للآخر في حال لم يعمل الأول.', c: false }], e: 'الشرح المبسط والواضح يساعد على بناء الثقة. الحقنة (VPI) تبني مناعة دموية آمنة، والقطرات (VPO) تبني مناعة معوية جماعية.' },
+                { type: 'true_false', q: 'إذا تم اكتشاف عينة إيجابية لفيروس VDPV في مياه الصرف الصحي لمدينة ما، الإجراء الأول هو انتظار ظهور حالات مرضية للتأكد.', c: false, e: 'خطأ. الكشف في مياه الصرف هو إنذار مبكر، ويجب إطلاق استجابة سريعة (مثل حملات تلقيح) فورًا لمنع ظهور أي حالات مرضية.' },
+                { type: 'mcq', q: 'طفل عمره 8 أشهر لم يتلق أي لقاح سابقًا. ما هي الاستراتيجية الصحيحة لبدء تلقيحه ضد شلل الأطفال؟', a: [{ t: 'البدء بجدول "اللحاق بالركب" حسب توجيهات الطبيب.', c: true }, { t: 'لا يمكن تلقيحه الآن فقد فات الأوان.', c: false }, { t: 'إعطاؤه جرعة VPO فقط.', c: false }], e: 'لا يفوت أوان التلقيح أبدًا. يتم وضع جدول مخصص للأطفال المتأخرين لضمان حصولهم على الحماية اللازمة.' },
+                { type: 'fill_in_blank', q: 'في حملة تلقيح استعجالية لمواجهة تفشٍ محتمل، اللقاح الأكثر استخدامًا وفعالية هو _____.', a: 'VPO', e: 'يُفضل VPO (الفموي) في الحملات لأنه أسهل في الإعطاء ويبني المناعة الجماعية بسرعة لوقف انتشار الفيروس.' },
+                { type: 'mcq', q: 'ممرض أعطى طفلًا لقاح VPO بالخطأ بدلًا من لقاح آخر. ما هو الإجراء الفوري؟', a: [{ t: 'لا شيء، فاللقاح آمن.', c: false }, { t: 'تسجيل الخطأ، طمأنة الأهل، وإعطاء اللقاح الصحيح في موعده.', c: true }, { t: 'إعطاء مضاد للفيروسات فورًا.', c: false }], e: 'إعطاء جرعة إضافية من VPO لا يشكل خطرًا كبيرًا. الأهم هو الشفافية وتصحيح المسار لضمان حصول الطفل على كل لقاحاته المطلوبة.' },
+                { type: 'true_false', q: 'إذا تقيأ الطفل مباشرة بعد أخذ جرعة VPO، يجب إعادة الجرعة فورًا.', c: true, e: 'صحيح. توصي منظمة الصحة العالمية بإعادة الجرعة الفموية (VPO) فورًا إذا تقيأ الطفل خلال 30 دقيقة من أخذها لضمان امتصاصها بالكامل.' },
+                { type: 'mcq', q: 'عائلة سترحل للعيش في بلد لا يزال فيه شلل الأطفال متوطنًا. ما هي أهم نصيحة لهم بخصوص طفلهم الملقح بالكامل؟', a: [{ t: 'لا داعي لأي إجراء إضافي.', c: false }, { t: 'التأكد من أخذ كل الجرعات وأخذ جرعة داعمة إضافية قبل السفر.', c: true }, { t: 'تجنب مخالطة الأطفال هناك.', c: false }], e: 'عند السفر لمناطق الخطر، غالبًا ما يُنصح بجرعة داعمة إضافية لتعزيز المناعة إلى أقصى حد ممكن.' },
+                { type: 'fill_in_blank', q: 'عندما ترفض أم تلقيح ابنها خوفًا من الشائعات، فإن دورك كمختص هو تقديم _____ علمية وموثوقة.', a: 'معلومات', e: 'التواصل الفعال المبني على الأدلة هو أفضل وسيلة لمعالجة التردد في أخذ اللقاحات وبناء الثقة.' },
+                { type: 'true_false', q: 'المراقبة البيئية تعتبر نظام إنذار مبكر.', c: true, e: 'صحيح. تتيح المراقبة البيئية اكتشاف وجود الفيروس في مجتمع ما قبل أسابيع أو أشهر من ظهور أول حالة شلل.' },
+                { type: 'mcq', q: 'مختص صحي يزور مدرسة ابتدائية، ما هي أهم جرعة شلل أطفال يجب التأكد من أن جميع الأطفال قد حصلوا عليها؟', a: [{ t: 'جرعة 12 شهرًا', c: false }, { t: 'الجرعة الداعمة لسن 6 سنوات', c: true }, { t: 'جرعة 4 أشهر', c: false }], e: 'جرعة 6 سنوات حاسمة لأنها تعزز المناعة في وقت يبدأ فيه الأطفال بالتفاعل الاجتماعي الواسع في المدارس.' },
+            ]
+        },
+        {
+            title: "المستوى 5: خبرة متقدمة", passingScore: 8,
+            questions: [
+                { type: 'mcq', q: 'ما هو السبب الرئيسي الذي يجعل القضاء التام على شلل الأطفال عالميًا صعبًا رغم وجود لقاح فعال؟', a: [{ t: 'صعوبة إنتاج اللقاح', c: false }, { t: 'جيوب نقص التغطية التلقيحية والنزاعات', c: true }, { t: 'تحور الفيروس بشكل مستمر', c: false }], e: 'تظل المناطق التي يصعب الوصول إليها بسبب النزاعات أو العوامل الجغرافية، بالإضافة إلى التردد في أخذ اللقاحات، هي العائق الأكبر أمام القضاء على المرض.' },
+                { type: 'true_false', q: 'التحول العالمي المستقبلي يهدف إلى الاعتماد على لقاح VPI فقط بعد القضاء التام على الفيروس.', c: true, e: 'صحيح. بمجرد القضاء على جميع فيروسات شلل الأطفال، سيتم التوقف عن استخدام VPO (الفموي) لتجنب أي خطر لظهور VDPV، والاعتماد على VPI (الحقني) فقط.' },
+                { type: 'fill_in_blank', q: 'المناعة التي يمنحها VPO والتي تحمي الآخرين غير الملقحين في المجتمع تسمى المناعة _____.', a: 'الجماعية', e: 'المناعة الجماعية (أو مناعة القطيع) هي عندما يكون عدد كبير من السكان محصنين، مما يوفر حماية غير مباشرة للأفراد غير المحصنين.' },
+                { type: 'mcq', q: 'لماذا كانت جرعة VPO عند الولادة تحديدًا ذات خطورة نسبية (رغم ندرتها) مقارنة بالجرعات اللاحقة؟', a: [{ t: 'لأن الجهاز المناعي للوليد غير ناضج تمامًا', c: true }, { t: 'لصعوبة تحديد الجرعة', c: false }, { t: 'لأنها تتفاعل مع حليب الأم', c: false }], e: 'الجهاز المناعي لحديثي الولادة يكون أقل نضجًا، مما قد يجعله أكثر عرضة (بشكل نادر جدًا) للمضاعفات المرتبطة باللقاحات الحية المضعفة.' },
+                { type: 'true_false', q: 'إعلان منطقة ما "خالية من شلل الأطفال" يعني التوقف الفوري عن التلقيح والمراقبة فيها.', c: false, e: 'خطأ. يجب أن تستمر برامج التلقيح والمراقبة الصارمة حتى يتم القضاء على الفيروس من كل مكان في العالم، لمنع عودته مرة أخرى.' },
+                { type: 'mcq', q: 'في حال عودة ظهور فيروس شلل الأطفال البري عالميًا، ما هو التأثير المحتمل على استراتيجية الجزائر؟', a: [{ t: 'لا يوجد تأثير', c: false }, { t: 'تشديد المراقبة على الحدود وربما تكثيف حملات VPO', c: true }, { t: 'التحول إلى VPI فقط', c: false }], e: 'أي تهديد خارجي يتطلب استجابة وقائية قوية، بما في ذلك تعزيز المناعة الجماعية بسرعة باستخدام حملات VPO وتكثيف المراقبة.' },
+                { type: 'fill_in_blank', q: 'إلى جانب المراقبة البيئية، يتم البحث عن الفيروس عبر مراقبة حالات الشلل الرخو _____.', a: 'الحاد', e: 'مراقبة الشلل الرخو الحاد (Acute Flaccid Paralysis) هي حجر الزاوية في اكتشاف حالات شلل الأطفال المشتبه بها للتحقيق الفوري.' },
+                { type: 'mcq', q: 'ما هو التحدي الأكبر للمراقبة البيئية (مياه الصرف)؟', a: [{ t: 'تحديد الموقع الدقيق للمصابين ضمن منطقة كبيرة', c: true }, { t: 'جمع العينات مكلف جدًا', c: false }, { t: 'التحاليل تستغرق سنوات', c: false }], e: 'إذا كانت محطة الصرف الصحي تخدم مليون شخص، فإن العينة الإيجابية تخبرنا بوجود الفيروس في المنطقة، ولكن لا تحدد الحي أو الشخص المصاب بالضبط.' },
+                { type: 'true_false', q: 'وجود فيروس VDPV2 في بلد مجاور لا يشكل أي تهديد للجزائر بفضل المناعة العالية.', c: false, e: 'خطأ. في عالم مترابط، لا توجد دولة آمنة حتى تكون جميع الدول آمنة. الفيروسات لا تعرف الحدود، وأي تفشٍ قريب يعتبر تهديدًا محتملاً يتطلب اليقظة.' },
+                { type: 'mcq', q: 'الهدف النهائي لمنظمة الصحة العالمية هو عالم خالٍ من كل أشكال فيروس شلل الأطفال، بما في ذلك:', a: [{ t: 'الفيروس البري فقط', c: false }, { t: 'الفيروس البري والفيروسات المشتقة من اللقاح (VDPV)', c: true }, { t: 'الفيروسات المعوية بشكل عام', c: false }], e: 'تتضمن استراتيجية القضاء على شلل الأطفال التعامل مع الفيروس البري ومعالجة خطر الفيروسات المشتقة من اللقاح لتحقيق استئصال كامل ودائم للمرض.' },
+            ]
+        }
+    ];
+
+    // JavaScript Logic (with all features integrated)
+    const mainMenu = document.getElementById('main-menu');
+    const quizScreen = document.getElementById('quiz-screen');
+    const levelCompleteScreen = document.getElementById('level-complete-screen');
+    const gameCompleteScreen = document.getElementById('game-complete-screen');
+    const headerSubtitle = document.getElementById('header-subtitle');
+    const levelTitle = document.getElementById('level-title');
+    const questionCounter = document.getElementById('question-counter');
+    const progressBar = document.getElementById('progress-bar');
+    const questionTextElement = document.getElementById('question-text');
+    const answerButtonsElement = document.getElementById('answer-buttons');
+    const fibContainer = document.getElementById('fill-in-blank-container');
+    const fibInput = document.getElementById('fib-input');
+    const checkButton = document.getElementById('check-btn');
+    const feedbackText = document.getElementById('feedback-text');
+    const nextButton = document.getElementById('next-btn');
+    const explanationContainer = document.getElementById('explanation-container');
+    const explanationText = document.getElementById('explanation-text');
+    const levelResultTitle = document.getElementById('level-result-title');
+    const levelScoreText = document.getElementById('level-score-text');
+    const levelResultMessage = document.getElementById('level-result-message');
+    const resultIconContainer = document.getElementById('result-icon-container');
+    const nextLevelButton = document.getElementById('next-level-btn');
+    const retryLevelButton = document.getElementById('retry-level-btn');
+    const backToMenuButton = document.getElementById('back-to-menu-btn');
+    const playAgainButton = document.getElementById('play-again-btn');
+    const cheatCodeTrigger = document.getElementById('cheat-code-trigger');
+    const backToMenuFromQuiz = document.getElementById('back-to-menu-from-quiz');
+
+    let currentLevelIndex = 0;
+    let currentQuestionIndex = 0;
+    let score = 0;
+    let unlockedLevels = 1;
+
+    const progressKey = 'polioQuizProgress';
+    function saveProgress() {
+        localStorage.setItem(progressKey, unlockedLevels);
+    }
+    function loadProgress() {
+        const savedProgress = localStorage.getItem(progressKey);
+        if (savedProgress) {
+            unlockedLevels = parseInt(savedProgress, 10);
+        }
+    }
+
+    function initGame() {
+        mainMenu.classList.remove('hide');
+        quizScreen.classList.add('hide');
+        levelCompleteScreen.classList.add('hide');
+        gameCompleteScreen.classList.add('hide');
+        headerSubtitle.innerText = "اختر مستوى لتبدأ التحدي";
+        
+        const levelGrid = mainMenu.querySelector('.level-grid');
+        levelGrid.innerHTML = '';
+        
+        gameData.forEach((level, index) => {
+            const isLocked = index + 1 > unlockedLevels;
+            const levelButton = document.createElement('button');
+            levelButton.classList.add('level-btn');
+            levelButton.innerHTML = `<span class="level-title">${level.title}</span><span class="level-status">${isLocked ? '🔒' : '▶️'}</span>`;
+            if (isLocked) {
+                levelButton.classList.add('locked');
+            } else {
+                levelButton.onclick = () => startLevel(index);
+            }
+            levelGrid.appendChild(levelButton);
+        });
+    }
+
+    function startLevel(levelIndex) {
+        currentLevelIndex = levelIndex;
+        currentQuestionIndex = 0;
+        score = 0;
+        
+        mainMenu.classList.add('hide');
+        quizScreen.classList.remove('hide');
+        levelTitle.innerText = gameData[currentLevelIndex].title;
+        headerSubtitle.innerText = gameData[currentLevelIndex].title;
+        
+        setNextQuestion();
+    }
+
+    function setNextQuestion() {
+        resetState();
+        const questionsInLevel = gameData[currentLevelIndex].questions;
+        if (currentQuestionIndex < questionsInLevel.length) {
+            updateProgress();
+            showQuestion(questionsInLevel[currentQuestionIndex]);
+        } else {
+            showLevelCompleteScreen();
+        }
+    }
+
+    function showQuestion(question) {
+        questionTextElement.innerText = question.q;
+        
+        if (question.type === 'mcq' || question.type === 'true_false') {
+            answerButtonsElement.classList.remove('hide');
+            fibContainer.classList.add('hide');
+            checkButton.classList.add('hide');
+            
+            const answers = question.type === 'true_false' 
+                ? [{ t: 'صح', c: true }, { t: 'خطأ', c: false }]
+                : question.a;
+            
+            answers.forEach(answer => {
+                const button = document.createElement('button');
+                button.innerText = answer.t;
+                button.classList.add('btn');
+                const isCorrect = question.type === 'true_false' ? (answer.c === question.c) : answer.c;
+                if (isCorrect) button.dataset.correct = true;
+                button.addEventListener('click', selectAnswer);
+                answerButtonsElement.appendChild(button);
+            });
+
+        } else if (question.type === 'fill_in_blank') {
+            answerButtonsElement.classList.add('hide');
+            fibContainer.classList.remove('hide');
+            checkButton.classList.remove('hide');
+            fibInput.focus();
+        }
+    }
+
+    function selectAnswer(e) {
+        const selectedButton = e.target;
+        const correct = selectedButton.dataset.correct === 'true';
+        if (correct) {
+            score++;
+        } else {
+            selectedButton.classList.add('animate-wrong');
+        }
+        
+        Array.from(answerButtonsElement.children).forEach(button => {
+            if (button.dataset.correct) {
+                button.classList.add('correct', 'animate-correct');
+            } else {
+                button.classList.add('wrong');
+            }
+            button.disabled = true;
+        });
+        showExplanation();
+        nextButton.classList.remove('hide');
+    }
+
+    function checkFibAnswer() {
+        if(fibInput.disabled) return;
+        fibInput.disabled = true;
+        checkButton.classList.add('hide');
+
+        const userAnswer = fibInput.value.trim().toLowerCase();
+        const correctAnswer = gameData[currentLevelIndex].questions[currentQuestionIndex].a.toLowerCase();
+
+        if (userAnswer === correctAnswer) {
+            score++;
+            feedbackText.innerText = 'إجابة صحيحة!';
+            feedbackText.style.color = 'var(--correct-color)';
+            fibInput.classList.add('animate-correct');
+        } else {
+            feedbackText.innerText = `إجابة خاطئة. الصحيح هو: ${gameData[currentLevelIndex].questions[currentQuestionIndex].a}`;
+            feedbackText.style.color = 'var(--wrong-color)';
+            fibInput.classList.add('animate-wrong');
+        }
+        showExplanation();
+        nextButton.classList.remove('hide');
+    }
+
+    function showExplanation() {
+        const currentQuestion = gameData[currentLevelIndex].questions[currentQuestionIndex];
+        if (currentQuestion.e) {
+            explanationText.innerHTML = `💡 <strong>شرح:</strong> ${currentQuestion.e}`;
+            explanationContainer.classList.remove('hide');
+            setTimeout(() => explanationContainer.classList.add('visible'), 10);
+        }
+    }
+
+    function showLevelCompleteScreen() {
+        quizScreen.classList.add('hide');
+        levelCompleteScreen.classList.remove('hide');
+
+        const levelData = gameData[currentLevelIndex];
+        const passed = score >= levelData.passingScore;
+        
+        levelResultTitle.innerText = passed ? 'أحسنت! لقد اجتزت المستوى' : 'للأسف، لم تجتز المستوى';
+        levelScoreText.innerText = `نتيجتك: ${score} / ${levelData.questions.length}`;
+        resultIconContainer.innerHTML = `<div class="result-icon">${passed ? '🎉' : '😟'}</div>`;
+
+        nextLevelButton.classList.add('hide');
+        retryLevelButton.classList.add('hide');
+        
+        if (passed) {
+            levelResultMessage.innerText = "معلوماتك ممتازة! أنت جاهز للتحدي التالي.";
+            if (currentLevelIndex + 2 > unlockedLevels) {
+                unlockedLevels = currentLevelIndex + 2;
+                saveProgress();
+            }
+            if (currentLevelIndex < gameData.length - 1) {
+                nextLevelButton.classList.remove('hide');
+            } else {
+                setTimeout(() => {
+                    levelCompleteScreen.classList.add('hide');
+                    gameCompleteScreen.classList.remove('hide');
+                    headerSubtitle.innerText = "لقد وصلت إلى القمة!";
+                }, 1500);
+            }
+        } else {
+            levelResultMessage.innerText = `تحتاج إلى ${levelData.passingScore} إجابات صحيحة للمرور. حاول مرة أخرى لتقوية معلوماتك.`;
+            retryLevelButton.classList.remove('hide');
+        }
+    }
+
+    function resetState() {
+        nextButton.classList.add('hide');
+        checkButton.classList.add('hide');
+        fibInput.value = '';
+        fibInput.disabled = false;
+        feedbackText.innerText = '';
+        fibInput.classList.remove('animate-correct', 'animate-wrong');
+        explanationContainer.classList.add('hide');
+        explanationContainer.classList.remove('visible');
+        explanationText.innerHTML = '';
+        while (answerButtonsElement.firstChild) {
+            answerButtonsElement.removeChild(answerButtonsElement.firstChild);
+        }
+    }
+
+    function updateProgress() {
+        const questionsInLevel = gameData[currentLevelIndex].questions;
+        const progressPercentage = ((currentQuestionIndex + 1) / questionsInLevel.length) * 100;
+        progressBar.style.width = `${progressPercentage}%`;
+        questionCounter.innerText = `السؤال ${currentQuestionIndex + 1} من ${questionsInLevel.length}`;
+    }
+
+    // --- Event Listeners and Initial Load ---
+    nextButton.addEventListener('click', () => { currentQuestionIndex++; setNextQuestion(); });
+    checkButton.addEventListener('click', checkFibAnswer);
+    fibInput.addEventListener('keypress', (event) => { if (event.key === "Enter") checkButton.click(); });
+    nextLevelButton.addEventListener('click', () => { startLevel(currentLevelIndex + 1); });
+    retryLevelButton.addEventListener('click', () => { startLevel(currentLevelIndex); });
+    backToMenuButton.addEventListener('click', initGame);
+    playAgainButton.addEventListener('click', () => {
+        unlockedLevels = 1;
+        saveProgress();
+        initGame();
+    });
+    backToMenuFromQuiz.addEventListener('click', () => {
+        if (confirm('هل أنت متأكد من رغبتك في الخروج؟ سيتم فقدان تقدمك في هذا المستوى.')) {
+            initGame();
+        }
+    });
+    cheatCodeTrigger.addEventListener('click', () => {
+        const input = prompt('أدخل شيفرة الغش:');
+        if (input === null) return;
+
+        const userInput = input.trim().toUpperCase();
+        let codeApplied = true;
+        let alertMessage = '';
+
+        if (userInput.startsWith('RIKU')) {
+            const levelStr = userInput.replace('RIKU', '');
+            if (levelStr === '') {
+                unlockedLevels = gameData.length + 1;
+                alertMessage = 'شيفرة مفعلة! تم فتح جميع المستويات.';
+            } else {
+                const level = parseInt(levelStr, 10);
+                if (level >= 1 && level <= gameData.length) {
+                    unlockedLevels = level + 1;
+                    alertMessage = `شيفرة مفعلة! تم فتح المستويات حتى المستوى ${level}.`;
+                } else { codeApplied = false; }
+            }
+        } else if (userInput.startsWith('RIKA')) {
+            const levelStr = userInput.replace('RIKA', '');
+            if (levelStr === '') {
+                unlockedLevels = 1;
+                alertMessage = 'شيفرة مفعلة! تم إعادة قفل جميع المستويات.';
+            } else {
+                const level = parseInt(levelStr, 10);
+                if (level >= 1 && level <= gameData.length) {
+                    unlockedLevels = Math.max(1, level -1);
+                    alertMessage = `شيفرة مفعلة! تم قفل المستويات ابتداءً من المستوى ${level}.`;
+                } else { codeApplied = false; }
+            }
+        } else { codeApplied = false; }
+        
+        if (codeApplied) {
+            alert(alertMessage);
+            saveProgress();
+            initGame();
+        } else if (input !== '') {
+            alert('شيفرة غير صحيحة.');
+        }
+    });
+
+    loadProgress();
+    initGame();
+});
+</script>
+</body>
+</html>
